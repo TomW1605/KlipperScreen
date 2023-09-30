@@ -11,6 +11,7 @@ class Keypad(Gtk.Box):
         self.labels = {}
         self.change_temp = change_temp
         self.pid_calibrate = pid_calibrate
+        self.close_function = close_function
         self.screen = screen
         self._gtk = screen.gtk
 
@@ -55,7 +56,7 @@ class Keypad(Gtk.Box):
         self.pid.set_sensitive(False)
         self.pid.set_no_show_all(True)
         b = self._gtk.Button('cancel', _('Close'), None, .66, Gtk.PositionType.LEFT, 1)
-        b.connect("clicked", close_function)
+        b.connect("clicked", self.close_function)
 
         self.add(self.labels['entry'])
         self.add(numpad)
@@ -82,6 +83,7 @@ class Keypad(Gtk.Box):
         elif digit == 'E':
             self.change_temp(temp)
             self.labels['entry'].set_text("")
+            self.close_function()
         elif digit == 'PID':
             self.pid_calibrate(temp)
             self.labels['entry'].set_text("")
