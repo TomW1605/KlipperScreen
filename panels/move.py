@@ -159,22 +159,40 @@ class Panel(ScreenPanel):
                 self.labels['pos_x'].set_text(f"X: {data['gcode_move']['gcode_position'][0]:.2f}")
                 self.labels['pos_y'].set_text(f"Y: {data['gcode_move']['gcode_position'][1]:.2f}")
                 self.labels['pos_z'].set_text(f"Z: {data['gcode_move']['gcode_position'][2]:.2f}")
+                self.buttons["x+"].set_sensitive(True)
+                self.buttons["x-"].set_sensitive(True)
+                self.buttons["y+"].set_sensitive(True)
+                self.buttons["y-"].set_sensitive(True)
+                self.buttons["z+"].set_sensitive(True)
+                self.buttons["z-"].set_sensitive(True)
         else:
             if "x" in homed_axes:
                 if "gcode_move" in data and "gcode_position" in data["gcode_move"]:
                     self.labels['pos_x'].set_text(f"X: {data['gcode_move']['gcode_position'][0]:.2f}")
+                self.buttons["x+"].set_sensitive(True)
+                self.buttons["x-"].set_sensitive(True)
             else:
                 self.labels['pos_x'].set_text("X: ?")
+                self.buttons["x+"].set_sensitive(False)
+                self.buttons["x-"].set_sensitive(False)
             if "y" in homed_axes:
                 if "gcode_move" in data and "gcode_position" in data["gcode_move"]:
                     self.labels['pos_y'].set_text(f"Y: {data['gcode_move']['gcode_position'][1]:.2f}")
+                self.buttons["y+"].set_sensitive(True)
+                self.buttons["y-"].set_sensitive(True)
             else:
                 self.labels['pos_y'].set_text("Y: ?")
+                self.buttons["y+"].set_sensitive(False)
+                self.buttons["y-"].set_sensitive(False)
             if "z" in homed_axes:
                 if "gcode_move" in data and "gcode_position" in data["gcode_move"]:
                     self.labels['pos_z'].set_text(f"Z: {data['gcode_move']['gcode_position'][2]:.2f}")
+                self.buttons["z+"].set_sensitive(True)
+                self.buttons["z-"].set_sensitive(True)
             else:
                 self.labels['pos_z'].set_text("Z: ?")
+                self.buttons["z+"].set_sensitive(False)
+                self.buttons["z-"].set_sensitive(False)
 
     def change_distance(self, widget, distance):
         logging.info(f"### Distance {distance}")
