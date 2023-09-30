@@ -56,8 +56,10 @@ class Panel(ScreenPanel):
             row = int(i / columns)
 
             width = height = 1
-            if expand_last is True and i + 1 == length and length % 2 == 1:
-                width = 2
+            if expand_last is True and i + 1 == length:
+                # logging.info(f"{length} - ({columns} * {row}) - ({col} - 1) = {length - (columns * row) - (col - 1)}")
+                last_row_len = length - (columns * row)
+                width = columns - (last_row_len - 1)
 
             self.grid.attach(self.labels[key], col, row, width, height)
             i += 1
