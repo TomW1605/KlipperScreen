@@ -56,6 +56,7 @@ class Panel(ScreenPanel):
         changeable = any(fan.startswith(x) or fan == x for x in CHANGEABLE_FANS)
         name = Gtk.Label()
         fan_name = _("Part Fan") if fan == "fan" else fan.split()[1]
+        fan_name = fan_name.replace("_", " ").title()
         name.set_markup(f"\n<big><b>{fan_name}</b></big>\n")
         name.set_hexpand(True)
         name.set_vexpand(True)
@@ -102,14 +103,17 @@ class Panel(ScreenPanel):
             "speed": speed,
         }
 
-        devices = sorted(self.devices)
-        if fan == "fan":
-            pos = 0
-        elif "fan" in devices:
-            devices.pop(devices.index("fan"))
-            pos = devices.index(fan) + 1
-        else:
-            pos = devices.index(fan)
+        def sorter(fan):
+            return (0 if self.devices[fan]["changeable"] else 1, fan)
+
+        devices = sorted(self.devices, key=sorter)
+        # if fan == "fan":
+        #     pos = 0
+        # elif "fan" in devices:
+        #     devices.pop(devices.index("fan"))
+        #     pos = devices.index(fan) + 1
+        # else:
+        pos = devices.index(fan)
 
         self.labels['devices'].insert_row(pos)
         self.labels['devices'].attach(fan_row, 0, pos, 1, 1)
@@ -117,6 +121,7 @@ class Panel(ScreenPanel):
 
     def load_fans(self):
         fans = self._printer.get_fans()
+        logging.info(fans)
         for fan in fans:
             # Support for hiding devices by name
             name = fan.split()[1] if len(fan.split()) > 1 else fan
