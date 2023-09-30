@@ -42,6 +42,12 @@ class Panel(ScreenPanel):
         self.buttons['motors_off'].connect("clicked", self._screen._confirm_send_action,
                                            _("Are you sure you wish to disable motors?"),
                                            "printer.gcode.script", script)
+
+        for axis in ["x", "y", "z"]:
+            if self._config.get_config()['main'].getboolean(f"invert_{axis}", False):
+                self.buttons[f"{axis}+"].set_label(f"{axis.upper()}-")
+                self.buttons[f"{axis}-"].set_label(f"{axis.upper()}+")
+
         adjust = self._gtk.Button("settings", None, "color2", 1, Gtk.PositionType.LEFT, 1)
         adjust.connect("clicked", self.load_menu, 'options', _('Settings'))
         adjust.set_hexpand(False)
