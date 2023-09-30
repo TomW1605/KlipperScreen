@@ -24,6 +24,7 @@ class Panel(ScreenPanel):
 
     def load_pins(self):
         output_pins = self._printer.get_output_pins()
+        logging.info(output_pins)
         for pin in output_pins:
             # Support for hiding devices by name
             name = pin.split()[1]
@@ -35,7 +36,7 @@ class Panel(ScreenPanel):
 
         logging.info(f"Adding pin: {pin}")
         name = Gtk.Label()
-        name.set_markup(f'\n<big><b>{" ".join(pin.split(" ")[1:])}</b></big>\n')
+        name.set_markup(f'\n<big><b>{(" ".join(pin.split(" ")[1:]).replace("_", " ").title())}</b></big>\n')
         name.set_hexpand(True)
         name.set_vexpand(True)
         name.set_halign(Gtk.Align.START)
@@ -43,29 +44,17 @@ class Panel(ScreenPanel):
         name.set_line_wrap(True)
         name.set_line_wrap_mode(Pango.WrapMode.WORD_CHAR)
 
-        scale = Gtk.Scale.new_with_range(orientation=Gtk.Orientation.HORIZONTAL, min=0, max=100, step=1)
-        scale.set_value(self.check_pin_value(pin))
-        scale.set_digits(0)
-        scale.set_hexpand(True)
-        scale.set_has_origin(True)
-        scale.get_style_context().add_class("fan_slider")
-        scale.connect("button-release-event", self.set_output_pin, pin)
+        switch = Gtk.Switch()
+        switch.set_active(self.get_pin_value(pin))
+        switch.connect("notify::active", self.set_output_pin, pin)
 
-        min_btn = self._gtk.Button("cancel", None, "color1", 1)
-        min_btn.set_hexpand(False)
-        min_btn.connect("clicked", self.update_pin_value, pin, 0)
-
-        pin_col = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=5)
-        pin_col.add(min_btn)
-        pin_col.add(scale)
-
-        pin_row = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
+        pin_row = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
         pin_row.add(name)
-        pin_row.add(pin_col)
+        pin_row.add(switch)
 
         self.devices[pin] = {
             "row": pin_row,
-            "scale": scale,
+            "switch": switch,
         }
 
         devices = sorted(self.devices)
@@ -75,9 +64,12 @@ class Panel(ScreenPanel):
         self.labels['devices'].attach(self.devices[pin]['row'], 0, pos, 1, 1)
         self.labels['devices'].show_all()
 
+    def get_pin_value(self, pin):
+        return self._printer.get_pin_value(pin)
+
     def set_output_pin(self, widget, event, pin):
         self._screen._ws.klippy.gcode_script(f'SET_PIN PIN={" ".join(pin.split(" ")[1:])} '
-                                             f'VALUE={self.devices[pin]["scale"].get_value() / 100}')
+                                             f'VALUE={int(self.devices[pin]["switch"].get_active())}')
         # Check the speed in case it wasn't applied
         GLib.timeout_add_seconds(1, self.check_pin_value, pin)
 
@@ -97,9 +89,9 @@ class Panel(ScreenPanel):
         if pin not in self.devices:
             return
 
-        self.devices[pin]['scale'].disconnect_by_func(self.set_output_pin)
-        self.devices[pin]['scale'].set_value(round(float(value) * 100))
-        self.devices[pin]['scale'].connect("button-release-event", self.set_output_pin, pin)
+        self.devices[pin]['switch'].disconnect_by_func(self.set_output_pin)
+        self.devices[pin]['switch'].set_active(value)
+        self.devices[pin]['switch'].connect("notify::active", self.set_output_pin, pin)
 
         if widget is not None:
             self.set_output_pin(None, None, pin)
