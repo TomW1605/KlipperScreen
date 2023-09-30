@@ -22,7 +22,10 @@ class Panel(ScreenPanel):
             'y-': self._gtk.Button("arrow-down", "Y-", "color2"),
             'z+': self._gtk.Button("z-farther", "Z+", "color3"),
             'z-': self._gtk.Button("z-closer", "Z-", "color3"),
-            'home': self._gtk.Button("home", _("Home"), "color4"),
+            'home': self._gtk.Button("home", _("Homing"), "color4"),
+            'home_all': self._gtk.Button("home", _("Home All"), "color4"),
+            'home_xy': self._gtk.Button("home", _("Home XY"), "color4"),
+            'home_z': self._gtk.Button("home", _("Home Z"), "color4"),
             'motors_off': self._gtk.Button("motor-off", _("Disable Motors"), "color4"),
         }
         self.buttons['x+'].connect("clicked", self.move, "X", "+")
@@ -31,7 +34,10 @@ class Panel(ScreenPanel):
         self.buttons['y-'].connect("clicked", self.move, "Y", "-")
         self.buttons['z+'].connect("clicked", self.move, "Z", "+")
         self.buttons['z-'].connect("clicked", self.move, "Z", "-")
-        self.buttons['home'].connect("clicked", self.home)
+        self.buttons['home'].connect("clicked", self.home_menu)
+        self.buttons['home_all'].connect("clicked", self.home)
+        self.buttons['home_xy'].connect("clicked", self.home, "X Y")
+        self.buttons['home_z'].connect("clicked", self.home, "Z")
         script = {"script": "M18"}
         self.buttons['motors_off'].connect("clicked", self._screen._confirm_send_action,
                                            _("Are you sure you wish to disable motors?"),
@@ -44,16 +50,16 @@ class Panel(ScreenPanel):
             if self._screen.lang_ltr:
                 grid.attach(self.buttons['x+'], 2, 1, 1, 1)
                 grid.attach(self.buttons['x-'], 0, 1, 1, 1)
-                grid.attach(self.buttons['z+'], 2, 2, 1, 1)
-                grid.attach(self.buttons['z-'], 0, 2, 1, 1)
+                grid.attach(self.buttons['z+'], 3, 0, 1, 1)
+                grid.attach(self.buttons['z-'], 3, 2, 1, 1)
             else:
                 grid.attach(self.buttons['x+'], 0, 1, 1, 1)
                 grid.attach(self.buttons['x-'], 2, 1, 1, 1)
                 grid.attach(self.buttons['z+'], 0, 2, 1, 1)
                 grid.attach(self.buttons['z-'], 2, 2, 1, 1)
-            grid.attach(adjust, 1, 2, 1, 1)
+            grid.attach(adjust, 2, 2, 1, 1)
             grid.attach(self.buttons['y+'], 1, 0, 1, 1)
-            grid.attach(self.buttons['y-'], 1, 1, 1, 1)
+            grid.attach(self.buttons['y-'], 1, 2, 1, 1)
 
         else:
             if self._screen.lang_ltr:
@@ -67,7 +73,9 @@ class Panel(ScreenPanel):
             grid.attach(self.buttons['z+'], 3, 0, 1, 1)
             grid.attach(self.buttons['z-'], 3, 1, 1, 1)
 
-        grid.attach(self.buttons['home'], 0, 0, 1, 1)
+        grid.attach(self.buttons['home_all'], 0, 0, 1, 1)
+        grid.attach(self.buttons['home_xy'], 1, 1, 1, 1)
+        grid.attach(self.buttons['home'], 0, 2, 1, 1)
         grid.attach(self.buttons['motors_off'], 2, 0, 1, 1)
 
         distgrid = Gtk.Grid()
@@ -240,10 +248,10 @@ class Panel(ScreenPanel):
             return True
         return False
 
-    def home(self, widget):
-        if "delta" in self._printer.get_config_section("printer")['kinematics']:
-            self._screen._send_action(widget, "printer.gcode.script", {"script": 'G28'})
-            return
+    def home(self, widget, axis="X Y Z"):
+        self._screen._ws.klippy.gcode_script(KlippyGcodes.HOME + " " + axis)
+
+    def home_menu(self, widget):
         name = "homing"
         disname = self._screen._config.get_menu_name("move", name)
         menuitems = self._screen._config.get_menu_items("move", name)
