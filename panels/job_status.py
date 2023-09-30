@@ -144,6 +144,7 @@ class Panel(ScreenPanel):
         buttons = {
             'speed': self._gtk.Button("speed+", "-", None, self.bts, Gtk.PositionType.LEFT, 1),
             'z': self._gtk.Button("home-z", "-", None, self.bts, Gtk.PositionType.LEFT, 1),
+            'layer': self._gtk.Button("layers", "-", None, self.bts, Gtk.PositionType.LEFT, 1),
             'extrusion': self._gtk.Button("extrude", "-", None, self.bts, Gtk.PositionType.LEFT, 1),
             'fan': self._gtk.Button("fan", "-", None, self.bts, Gtk.PositionType.LEFT, 1),
             'elapsed': self._gtk.Button("clock", "-", None, self.bts, Gtk.PositionType.LEFT, 1),
@@ -151,7 +152,7 @@ class Panel(ScreenPanel):
         }
         for button in buttons:
             buttons[button].set_halign(Gtk.Align.START)
-        buttons['fan'].connect("clicked", self.menu_item_clicked, {"panel": "fan", "name": _("Fan")})
+        buttons['fan'].connect("clicked", self.menu_item_clicked, {"panel": "fans", "name": _("Fans")})
         self.buttons.update(buttons)
 
         self.labels['temp_grid'] = Gtk.Grid()
@@ -225,19 +226,20 @@ class Panel(ScreenPanel):
 
         szfe = Gtk.Grid()
         szfe.set_column_homogeneous(True)
-        szfe.attach(self.buttons['speed'], 0, 0, 3, 1)
-        szfe.attach(self.buttons['z'], 2, 0, 2, 1)
-        if self._printer.get_tools():
-            szfe.attach(self.buttons['extrusion'], 0, 1, 3, 1)
-        if self._printer.get_fans():
-            szfe.attach(self.buttons['fan'], 2, 1, 2, 1)
+        szfe.attach(self.buttons['speed'],     0, 0, 3, 1)
+        szfe.attach(self.buttons['z'],         2, 0, 2, 1)
+
+        szfe.attach(self.buttons['extrusion'], 0, 1, 3, 1)
+        szfe.attach(self.buttons['layer'],     2, 1, 2, 1)
+
+        szfe.attach(self.buttons['elapsed'],   0, 2, 3, 1)
+        szfe.attach(self.buttons['fan'],       2, 2, 2, 1)
 
         info = Gtk.Grid()
         info.set_row_homogeneous(True)
         info.get_style_context().add_class("printing-info")
         info.attach(self.labels['temp_grid'], 0, 0, 1, 1)
-        info.attach(szfe, 0, 1, 1, 2)
-        info.attach(self.buttons['elapsed'], 0, 3, 1, 1)
+        info.attach(szfe, 0, 1, 1, 3)
         info.attach(self.buttons['left'], 0, 4, 1, 1)
         self.status_grid = info
 
@@ -296,6 +298,7 @@ class Panel(ScreenPanel):
         info.attach(self.labels['layer'], 2, 5, 1, 1)
         self.move_grid = info
         self.buttons['z'].connect("clicked", self.switch_info, self.move_grid)
+        self.buttons['layer'].connect("clicked", self.switch_info, self.move_grid)
         self.buttons['speed'].connect("clicked", self.switch_info, self.move_grid)
 
     def create_time_grid(self, widget=None):
@@ -592,6 +595,7 @@ class Panel(ScreenPanel):
                     self.labels['filament_used'].set_label(
                         f"{float(data['print_stats']['filament_used']) / 1000:.1f} m"
                     )
+            logging.info(data["print_stats"])
             if 'info' in data["print_stats"]:
                 with suppress(KeyError):
                     if data["print_stats"]['info']['total_layer'] is not None:
@@ -602,11 +606,15 @@ class Panel(ScreenPanel):
                             f"{data['print_stats']['info']['current_layer']} / "
                             f"{self.labels['total_layers'].get_text()}"
                         )
-            elif "layer_height" in self.file_metadata and "object_height" in self.file_metadata:
-                self.labels['layer'].set_label(
-                    f"{1 + round((self.pos_z - self.f_layer_h) / self.layer_h)} / "
-                    f"{self.labels['total_layers'].get_text()}"
-                )
+                        self.buttons['layer'].set_label(f"L:   {data['print_stats']['info']['current_layer']}/"
+                                                        f"{self.labels['total_layers'].get_text()}")
+            # elif "layer_height" in self.file_metadata and "object_height" in self.file_metadata:
+            #     self.labels['layer'].set_label(
+            #         f"{1 + round((self.pos_z - self.f_layer_h) / self.layer_h)} / "
+            #         f"{self.labels['total_layers'].get_text()}"
+            #     )
+            #     self.buttons['layer'].set_label(f"L:   {1 + round((self.pos_z - self.f_layer_h) / self.layer_h)}/"
+            #                                     f"{self.labels['total_layers'].get_text()}")
             if self.state in ["printing", "paused"]:
                 self.update_time_left()
 
@@ -822,7 +830,7 @@ class Panel(ScreenPanel):
     def update_file_metadata(self):
         if self._files.file_metadata_exists(self.filename):
             self.file_metadata = self._files.get_file_info(self.filename)
-            logging.info(f"Update Metadata. File: {self.filename} Size: {self.file_metadata['size']}")
+            logging.info(f"Update Metadata. File: {self.filename} Size: {self.file_metadata}")
             if "estimated_time" in self.file_metadata and self.timeleft_type == "slicer":
                 self.labels["est_time"].set_label(self.format_time(self.file_metadata['estimated_time']))
             if "object_height" in self.file_metadata:
