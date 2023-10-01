@@ -273,7 +273,7 @@ class Panel(ScreenPanel):
         return False
 
     def home(self, widget, axis="X Y Z"):
-        self._screen._ws.klippy.gcode_script(KlippyGcodes.HOME + " " + axis)
+        self._screen._ws.klippy.gcode_script("G28 " + axis)
 
     def home_menu(self, widget):
         name = "homing"
